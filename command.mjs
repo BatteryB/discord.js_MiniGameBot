@@ -1,10 +1,22 @@
 import { REST, Routes } from 'discord.js';
 import dotenv from 'dotenv';
+import sqlite3 from 'sqlite3';
 
-dotenv.config({ path: 'token.env' });
+
+dotenv.config({ path: 'env/token.env' });
 
 const CLIENT_ID = process.env.DISCORD_CLIENT_ID;
 const TOKEN = process.env.DISCORD_TOKEN;
+const data = new sqlite3.Database('db/data.db');
+
+const gameInfo = await gameName();
+let gameList = [];
+gameInfo.forEach(game => {
+    gameList.push({
+        name: game.gameName,
+        value: game.gameName
+    });
+});
 
 const commands = [
     {
@@ -24,16 +36,23 @@ const commands = [
                 description: '플레이 할 게임을 선택해주세요.',
                 type: 3,
                 required: true,
-                choices: [
-                    {
-                        name: '반응속도',
-                        value: '반응속도'
-                    }
-                ]
+                choices: gameList
             }
         ]
     }
 ];
+
+async function gameName() {
+    return new Promise((resolve, reject) => {
+        data.all("SELECT gameName FROM game", (err, rows) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(rows);
+            }
+        });
+    });
+}
 
 const rest = new REST({ version: '10' }).setToken(TOKEN);
 

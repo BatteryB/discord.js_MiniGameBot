@@ -194,6 +194,10 @@ async function 반응속도(thread, gameInfo, userListArr) {
         const collector = response.createMessageComponentCollector({ time: 60_000 });
 
         collector.on('collect', async i => {
+            if (userListArr.indexOf(i.user.id) == -1) {
+                i.reply({ content: '해당 게임의 참가자가 아닙니다.', ephemeral: true })
+                return;
+            }
 
             if (failUserArr.indexOf(i.user.id) != -1) { // 탈락자 배열에 있으면
                 i.reply({ content: '탈락하셔서 더 이상 버튼을 누를 수 없습니다.', ephemeral: true })
@@ -226,6 +230,7 @@ async function 반응속도(thread, gameInfo, userListArr) {
                 await thread.messages.fetch(response.id).then(message => message.edit({ content: '종료되었습니다!', components: [] }));
                 if (clickOrderArr.length > 0) { // 클릭 리스트에 1명 이상이 있으면 승자보고서 함수 호출
                     winnerReport(thread, gameInfo, clickOrderArr[0], userListArr) // clickOrderArr[0]는 처음 버튼을 누른 사람
+                    deleteThread(thread)
                 } else {
                     await thread.send('승자가 없기 때문에 무승부로 게임을 종료합니다.');
                     deleteThread(thread)
@@ -235,8 +240,19 @@ async function 반응속도(thread, gameInfo, userListArr) {
     }, 5000)
 }
 
+async function 너클본(thread, gameInfo, userListArrv) {
+    thread.send("제작중");
+    deleteThread(thread);
+    // let player1, player2
+    // player1 = player2 = [[], [], []];
+
+    // let gamePrint = new EmbedBuilder()
+    //     .setTitle('너클본')
+    //     .setDescription('')
+}
+
 async function winnerReport(thread, gameInfo, winner, userListArr) {
-    userListArr.forEach(async user => { // 포이치를 돌려서 userLIstArr만큼 반복
+    userListArr.forEach(async user => { // 포이치를 돌려서 userListArr만큼 반복
         if (user == winner) { // user가 winner와 같으면 점수 + 아니면 -
             await runQuery('UPDATE user SET score = score + ? WHERE id = ?', [gameInfo.plus, user]);
         } else {
@@ -244,8 +260,8 @@ async function winnerReport(thread, gameInfo, winner, userListArr) {
         }
     });
     await thread.send(`<@${winner}>님이 승리하셨습니다!\n\n*<@${winner}> +${gameInfo.plus}점\n그 외 -${gameInfo.minus}점*`);
-    deleteThread(thread)
 }
+
 
 async function deleteThread(thread) {
     thread.send('잠시 후 스레드가 제거됩니다.')
